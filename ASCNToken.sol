@@ -41,6 +41,26 @@ contract ASCNToken is ERC20("AlphaScan", "ASCN"), ERC20Burnable, Ownable {
     totalAllocation -= (minter.allocation - minter.minted);
   }
 
+  function addAllocation(address _minter, uint256 _allocation) external onlyOwner {
+    Minter storage minter = minters[_minter];
+    require(minter.minter!=address(0), "addAllocation: invalid minter");
+    require(!minter.revoked, "addAllocation: minter revoked");
+    require(_allocation>0 && (totalAllocation+_allocation <= maxSupply), "addAllocation: invalid allocation");
+
+    totalAllocation += _allocation;
+    minter.allocation += _allocation;
+  }
+
+  function reduceAllocation(address _minter, uint256 _allocation) external onlyOwner {
+    Minter storage minter = minters[_minter];
+    require(minter.minter!=address(0), "reduceAllocation: invalid minter");
+    require(!minter.revoked, "reduceAllocation: minter revoked");
+    require(_allocation>0 && (minter.allocation-minter.minted >= _allocation), "reduceAllocation: invalid allocation");
+
+    minter.allocation -= _allocation;
+    totalAllocation -= _allocation;
+  }
+
   // Only designated minters can mint (up to their respective allocations)
   function mint(address account, uint256 amount) external {
     require(ERC20.totalSupply() + amount <= maxSupply, "mint: max supply exceeded");
